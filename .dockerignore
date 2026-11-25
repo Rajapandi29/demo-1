@@ -2,9 +2,4 @@ node_modules
 .git
 .env
 dist
-<<<<<<< HEAD
 .dist
-=======
-.dist
-DB_store
->>>>>>> master
