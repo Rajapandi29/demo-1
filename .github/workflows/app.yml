@@ -31,9 +31,4 @@ jobs:
       - name: Build and start Docker containers
         run: docker compose up -d --build
 
-      - name: Check Docker containers
-        run: docker compose ps
-
-      - name: Stop Docker containers
-        if: always()
-        run: docker compose down
+     
