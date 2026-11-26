@@ -2,8 +2,8 @@
 name: Output Workflow
 
 on:
-  workflow_dispatch:
-
+  push:
+    branches: [ main ]
 jobs:
   output:
 
@@ -27,3 +27,11 @@ jobs:
 
       - name: Print goodbye
         run: echo "Thank you! Workflow execution completed successfully."
+
+      - name: Upload workflow output
+        uses: actions/upload-artifact@v3
+        with:
+          name: my-artifact
+          path: |
+            dist
+            package.json
