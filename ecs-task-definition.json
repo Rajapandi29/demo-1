@@ -1,0 +1,35 @@
+
+{
+  "family": "my-app-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::312743356628:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "backend",
+      "image": "312743356628.dkr.ecr.ap-southeast-2.amazonaws.com/app-backend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 5000,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "frontend",
+      "image": "312743356628.dkr.ecr.ap-southeast-2.amazonaws.com/app-frontend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 5173,
+          "protocol": "tcp"
+        }
+      ]
+    }
+  ]
+}
