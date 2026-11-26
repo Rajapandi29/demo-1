@@ -3,11 +3,11 @@ name: Output Workflow
 
 on:
   push:
-    branches: 
+    branches:
       - main
+
 jobs:
   output:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -29,14 +29,19 @@ jobs:
       - name: Print goodbye
         run: echo "Thank you! Workflow execution completed successfully."
 
+      - name: Create build directory
+        run: |
+          mkdir -p dist
+          echo "Build artifact created successfully!" > dist/output.txt
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-         name: build-files
-         path: dist/
+          name: build-files
+          path: dist/
 
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: build-files
-          path: dist/
+          path: downloaded-files/
