@@ -2,15 +2,26 @@
 name: First Workflow
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  basic:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Print greeting
-        run: echo "Hello world!"
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: Print goodbye
-        run: echo "Good Bye"
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+   
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
