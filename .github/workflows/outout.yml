@@ -3,7 +3,8 @@ name: Output Workflow
 
 on:
   push:
-    branches: [ main ]
+    branches: 
+      - main
 jobs:
   output:
 
@@ -34,4 +35,9 @@ jobs:
           name: my-artifact
           path: |
             dist
+
+      - name: Download workflow output
+        uses: actions/download-artifact@v3
+        with:
+          name: my-artifact
     
