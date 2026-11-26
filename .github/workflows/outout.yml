@@ -34,4 +34,4 @@ jobs:
           name: my-artifact
           path: |
             dist
-            package.json
+    
