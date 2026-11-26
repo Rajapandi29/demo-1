@@ -28,9 +28,12 @@ jobs:
         working-directory: ./backend
         run: npm install
 
-      - name: Build and start containers
+      - name: Build and start Docker containers
         run: docker compose up -d --build
 
-      - name: Check running containers
+      - name: Check Docker containers
         run: docker compose ps
 
+      - name: Stop Docker containers
+        if: always()
+        run: docker compose down
