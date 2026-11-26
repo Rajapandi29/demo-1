@@ -33,6 +33,7 @@ jobs:
 
   deploy:
     needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
@@ -50,22 +51,22 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
       - name: Build and push backend image
         env:
-            ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-            AWS_REGION: ap-southeast-2
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-            docker build -t $ECR_REGISTRY/app-backend:latest ./backend
-            docker push $ECR_REGISTRY/app-backend:latest
+          docker build -t $ECR_REGISTRY/app-backend:latest ./backend
+          docker push $ECR_REGISTRY/app-backend:latest
 
       - name: Build and push frontend image
         env:
-            ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-            AWS_REGION: ap-southeast-2
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-            docker build -t $ECR_REGISTRY/app-frontend:latest ./frontend
-            docker push $ECR_REGISTRY/app-frontend:latest
+          docker build -t $ECR_REGISTRY/app-frontend:latest ./frontend
+          docker push $ECR_REGISTRY/app-frontend:latest
+
+      - name: Print deployment status
+        run: |
+          echo "Backend Docker image pushed successfully!"
+          echo "Frontend Docker image pushed successfully!"
+          echo "Images uploaded to Amazon ECR!"
