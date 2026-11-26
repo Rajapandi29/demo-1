@@ -1,0 +1,30 @@
+
+name: Output Workflow
+
+on:
+  workflow_dispatch:
+
+jobs:
+  output:
+  needs: deploy 
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print greeting
+        run: echo "Hello Rajapandi!"
+
+      - name: Print frontend message
+        run: echo "Frontend application is running!"
+
+      - name: Print backend message
+        run: echo "Backend application is running!"
+
+      - name: Print Docker message
+        run: echo "Docker containers are ready!"
+
+      - name: Print AWS deployment message
+        run: echo "AWS deployment workflow completed!"
+
+      - name: Print goodbye
+        run: echo "Thank you! Workflow execution completed successfully."
