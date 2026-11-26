@@ -5,11 +5,6 @@ on:
   push:
     branches: [ main ]
 
-env:
-  AWS_REGION: ap-southeast-2
-  ECS_CLUSTER: my-cluster
-  ECS_SERVICE: my-service
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -18,18 +13,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-southeast-2
 
-      - name: Login to Amazon ECR
+      - name: Login to ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and push backend
+      - name: Build and push images
         env:
           ECR: ${{ steps.login-ecr.outputs.registry }}
           TAG: ${{ github.sha }}
@@ -37,96 +32,37 @@ jobs:
           docker build -t $ECR/app-backend:$TAG ./backend
           docker push $ECR/app-backend:$TAG
 
-      - name: Build and push frontend
-        env:
-          ECR: ${{ steps.login-ecr.outputs.registry }}
-          TAG: ${{ github.sha }}
-        run: |
           docker build -t $ECR/app-frontend:$TAG ./frontend
           docker push $ECR/app-frontend:$TAG
 
-      - name: Create ECS cluster if missing
+      - name: Create ECS cluster
         run: |
-          STATUS=$(aws ecs describe-clusters \
-            --clusters $ECS_CLUSTER \
-            --query 'clusters[0].status' \
-            --output text)
+          aws ecs create-cluster \
+            --cluster-name my-cluster || true
 
-          if [ "$STATUS" != "ACTIVE" ]; then
-            aws ecs create-cluster \
-              --cluster-name $ECS_CLUSTER
-          fi
-
-          aws ecs wait services-stable \
-            --cluster $ECS_CLUSTER \
-            --services dummy-service 2>/dev/null || true
-
-      - name: Update backend task definition
-        id: backend
+      - name: Register task definition
+        id: task
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: ecs-task-definition.json
           container-name: backend
           image: ${{ steps.login-ecr.outputs.registry }}/app-backend:${{ github.sha }}
 
-      - name: Update frontend task definition
+      - name: Update frontend image
         id: frontend
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: ${{ steps.backend.outputs.task-definition }}
+          task-definition: ${{ steps.task.outputs.task-definition }}
           container-name: frontend
           image: ${{ steps.login-ecr.outputs.registry }}/app-frontend:${{ github.sha }}
 
-      - name: Register ECS task definition
-        id: register
-        run: |
-          TASK_ARN=$(aws ecs register-task-definition \
-            --cli-input-json file://${{ steps.frontend.outputs.task-definition }} \
-            --query 'taskDefinition.taskDefinitionArn' \
-            --output text)
+      - name: Deploy ECS service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.frontend.outputs.task-definition }}
+          service: my-service
+          cluster: my-cluster
+          wait-for-service-stability: true
 
-          echo "task_arn=$TASK_ARN" >> $GITHUB_OUTPUT
-
-      - name: Create or update ECS service
-        env:
-          TASK_ARN: ${{ steps.register.outputs.task_arn }}
-          SUBNETS: ${{ secrets.ECS_SUBNET_IDS }}
-          SECURITY_GROUP: ${{ secrets.ECS_SECURITY_GROUP_ID }}
-        run: |
-          SERVICE_STATUS=$(aws ecs describe-services \
-            --cluster $ECS_CLUSTER \
-            --services $ECS_SERVICE \
-            --query 'services[0].status' \
-            --output text)
-
-          if [ "$SERVICE_STATUS" = "ACTIVE" ]; then
-
-            aws ecs update-service \
-              --cluster $ECS_CLUSTER \
-              --service $ECS_SERVICE \
-              --task-definition $TASK_ARN
-
-          else
-
-            aws ecs create-service \
-              --cluster $ECS_CLUSTER \
-              --service-name $ECS_SERVICE \
-              --task-definition $TASK_ARN \
-              --desired-count 1 \
-              --launch-type FARGATE \
-              --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SECURITY_GROUP],assignPublicIp=ENABLED}"
-
-          fi
-
-      - name: Wait for ECS deployment
-        run: |
-          aws ecs wait services-stable \
-            --cluster $ECS_CLUSTER \
-            --services $ECS_SERVICE
-
-      - name: Deployment success
-        run: |
-          echo "ECS Cluster created or verified!"
-          echo "ECS Service created or updated!"
-          echo "Frontend deployed successfully!"
-          echo "Backend deployed successfully!"
+      - name: Success
+        run: echo "Frontend and Backend deployed successfully!"
