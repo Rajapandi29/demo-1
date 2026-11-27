@@ -29,6 +29,19 @@ jobs:
       - name: Print goodbye
         run: echo "Thank you! Workflow execution completed successfully."
 
+      - name: checkout repository
+        uses: actions/checkout@v4
+
+      - name: cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            ~/.cache
+
+      - name: Install dependencies
+        run: npm install
+
       - name: Create build directory
         run: |
           mkdir -p dist
